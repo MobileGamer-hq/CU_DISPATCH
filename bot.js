@@ -23,7 +23,8 @@ class TelegramBotApp {
         this.port = process.env.PORT || 3000;
         this.url = "https://cu-dispatch.onrender.com";
 
-        this.bot = new TelegramBot(this.token,  { polling: true });
+        // this.bot = new TelegramBot(this.token,  { polling: true });
+        this.bot = new TelegramBot(this.token);
         this.userStates = {};
         this.userTempData = {};
         this.contactSessions = {};
