@@ -1,5 +1,6 @@
 // utilities/database.js
-const admin = require("./firebase"); // Import Firebase Admin SDK properly
+const admin = require("./firebase");
+const {validateLevel, validateMatricNumber} = require("./verification"); // Import Firebase Admin SDK properly
 
 // ========== USER FUNCTIONS ==========
 
@@ -38,13 +39,18 @@ async function getUser(userId) {
 // Add a single user
 async function addUser(userId, userInfo = {}) {
     try {
-        const db = admin.database();
-        await db.ref(`users/${userId}`).set({
-            ...userInfo,
-            joinedAt: new Date().toISOString(),
-        });
-        console.log(`✅ User ${userId} added successfully.`);
-        return true;
+        if(validateLevel(userInfo.level) && validateMatricNumber(userInfo.matric_number)) {
+            const db = admin.database();
+            await db.ref(`users/${userId}`).set({
+                ...userInfo,
+                joinedAt: new Date().toISOString(),
+            });
+            console.log(`✅ User ${userId} added successfully.`);
+            return true;
+        }else{
+            console.log("User credentials not accurate");
+            return false;
+        }
     } catch (error) {
         console.error(`❌ Error adding user ${userId}:`, error);
         return false;
@@ -78,7 +84,7 @@ async function getAllUsers() {
 async function deleteUser(userId) {
     try {
         const db = admin.database();
-        await db.ref(`users/${userId}`).remove();
+        // await db.ref(`users/${userId}`).remove();
         console.log(`✅ User ${userId} deleted successfully.`);
     } catch (error) {
         console.error("❌ Error deleting user:", error);

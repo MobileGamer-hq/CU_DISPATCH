@@ -3,7 +3,7 @@
 const admin = require("./firebase"); // Import the firebase admin SDK
 const { getUserIds } = require("./database"); // only getUserIds comes from database
 
-async function sendMessage(bot, chatId, message, options = {}) {
+async function sendMessage(bot, chatId, message, options = {parse_mode: "Markdown",}) {
     try {
         const sentMessage = await bot.sendMessage(chatId, message, options);
 
@@ -20,10 +20,11 @@ async function sendMessage(bot, chatId, message, options = {}) {
         return sentMessage;
     } catch (err) {
         console.error("❌ Error sending or storing message:", err.message);
+        throw err
     }
 }
 
-async function sendMessageToAll(bot, message, options = {}) {
+async function sendMessageToAll(bot, message, options = {parse_mode: "Markdown",}) {
     try {
         const userIds = await getUserIds(); // fetch all registered users
         console.log(`📤 Sending message to ${userIds.length} users...`);

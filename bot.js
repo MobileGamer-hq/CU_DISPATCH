@@ -23,7 +23,7 @@ class TelegramBotApp {
         this.port = process.env.PORT || 3000;
         this.url = "https://cu-council-beta-bot.onrender.com";
 
-        this.bot = new TelegramBot(this.token);
+        this.bot = new TelegramBot(this.token,  { polling: true });
         this.userStates = {};
         this.userTempData = {};
         this.contactSessions = {};
@@ -43,15 +43,10 @@ class TelegramBotApp {
             }
         });
 
-        this.app.get(`/`, (req, res) => {
-            try {
-                res.send("Working")
-                res.sendStatus(200);
-
-            } catch (err) {
-                console.error(`Error: ${err}`);
-                res.status(500).send(err);
-            }
+        this.app.get("/", (req, res) => {
+            // Set the webhook
+            this.bot.setWebHook(`${this.url}/bot${this.token}`);
+            res.send("Council bot is running!");
         });
     }
 

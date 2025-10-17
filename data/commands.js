@@ -1,4 +1,4 @@
-const commands = [
+const userCommands = [
   { command: "/start", description: "Register or initialize your session" },
   { command: "/help", description: "View available commands and features" },
   { command: "/view_info", description: "Check your registered information" },
@@ -51,6 +51,6 @@ const adminCommands = [
 
 
 module.exports = {
-  commands,
+  userCommands,
   adminCommands,
 };
