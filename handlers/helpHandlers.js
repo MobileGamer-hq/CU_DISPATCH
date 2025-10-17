@@ -1,5 +1,5 @@
 const admin = require("../utilities/firebase");
-const { sendMessage } = require("../utilities/messages");
+const {sendMessage} = require("../utilities/messages");
 
 // Escape MarkdownV2 special characters for Telegram
 function escapeMarkdown(text) {
@@ -7,8 +7,39 @@ function escapeMarkdown(text) {
 }
 
 module.exports = (bot, app) => {
+
     bot.onText(/\/help/, async (msg) => {
+
         const chatId = msg.chat.id;
+        const studentHelp = `
+👋 *Welcome to the Covenant University Student Council Bot!*
+
+📚 *Personal Info*  
+• /start – Register or initialize your session  
+• /help – View available commands  
+• /view_info – Check your registered information  
+
+✉️ *Contact*  
+• /contact – Message the Student Council (can be anonymous)  
+• /contacts – Get school office contact details  
+
+📅 *Events*  
+• /events – See upcoming CU events  
+• /announcements – View latest updates  
+• /timetable – View your semester timetable  
+• /semester_events – See semester events  
+• /monthly_events – See monthly events  
+
+💡 *Suggestions & Feedback*  
+• /suggest – Send ideas or feedback  
+• /faq – View answers to common questions  
+
+🔍 *Lost and Found*  
+• /submit_lost_and_found – Report a lost or found item (with image)  
+• /lost_and_found – View all posted items  
+
+ℹ️ *Note:* Student commands let you view and manage your info, events, and reports.
+`;
 
         try {
             const snapshot = await admin.database().ref("admins").once("value");
@@ -54,50 +85,21 @@ module.exports = (bot, app) => {
 Admin commands help you manage users, events, FAQs, and communication efficiently.
 `;
 
-                await bot.sendMessage(chatId, (adminHelp), {
+                await sendMessage(bot, chatId, (adminHelp), {
                     parse_mode: "MarkdownV2",
                 });
             } else {
-                const studentHelp = `
-👋 *Welcome to the Covenant University Student Council Bot!*
 
-📚 *Personal Info*  
-• /start – Register or initialize your session  
-• /help – View available commands  
-• /view_info – Check your registered information  
 
-✉️ *Contact*  
-• /contact – Message the Student Council (can be anonymous)  
-• /contacts – Get school office contact details  
-
-📅 *Events*  
-• /events – See upcoming CU events  
-• /announcements – View latest updates  
-• /timetable – View your semester timetable  
-• /semester_events – See semester events  
-• /monthly_events – See monthly events  
-
-💡 *Suggestions & Feedback*  
-• /suggest – Send ideas or feedback  
-• /faq – View answers to common questions  
-
-🔍 *Lost and Found*  
-• /submit_lost_and_found – Report a lost or found item (with image)  
-• /lost_and_found – View all posted items  
-
-ℹ️ *Note:* Student commands let you view and manage your info, events, and reports.
-`;
-
-                await sendMessage(chatId, escapeMarkdown(studentHelp), {
+                await sendMessage(bot, chatId, escapeMarkdown(studentHelp), {
                     parse_mode: "MarkdownV2",
                 });
             }
         } catch (error) {
             console.error("Error fetching admin data:", error);
-            bot.sendMessage(
-                chatId,
-                "❌ Sorry, there was an issue fetching the admin data."
-            );
+            await sendMessage(bot, chatId, escapeMarkdown(studentHelp), {
+                parse_mode: "MarkdownV2",
+            });
         }
     });
 };
