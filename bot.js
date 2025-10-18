@@ -47,7 +47,7 @@ class TelegramBotApp {
         this.app.get("/", (req, res) => {
             // Set the webhook
             this.bot.setWebHook(`${this.url}/bot${this.token}`);
-            res.send("Council bot is running!");
+            res.send("Council bot is running!\nWebHook set");
         });
     }
 
