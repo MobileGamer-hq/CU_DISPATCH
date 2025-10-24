@@ -179,6 +179,8 @@ module.exports = (bot, app) => {
                     );
                 } catch (err) {
                     console.warn(`Could not warn user ${user.uid}:`, err.message);
+                    // await deleteUser(user.uid);
+                    console.log("Deleting User.");
                 }
             }
 
