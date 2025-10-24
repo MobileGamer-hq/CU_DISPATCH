@@ -7,38 +7,74 @@ function escapeMarkdown(text) {
 }
 
 module.exports = (bot, app) => {
-
     bot.onText(/\/help/, async (msg) => {
-
         const chatId = msg.chat.id;
+
         const studentHelp = `
-👋 *Welcome to the Covenant University Student Council Bot!*
+👋 Welcome to the Covenant University Student Council Bot!
 
-📚 *Personal Info*  
-• /start – Register or initialize your session  
-• /help – View available commands  
-• /view_info – Check your registered information  
+📚 Personal Info
+• /start – Register or initialize your session
+• /help – View available commands
+• /view_info – Check your registered information
 
-✉️ *Contact*  
-• /contact – Message the Student Council (can be anonymous)  
-• /contacts – Get school office contact details  
+✉️ Contact
+• /contact – Message the Student Council (can be anonymous)
+• /contacts – Get school office contact details
 
-📅 *Events*  
-• /events – See upcoming CU events  
-• /announcements – View latest updates  
-• /timetable – View your semester timetable  
-• /semester_events – See semester events  
-• /monthly_events – See monthly events  
+📅 Events
+• /events – See upcoming CU events
+• /announcements – View latest updates
+• /timetable – View your semester timetable
+• /semester_events – See semester events
+• /monthly_events – See monthly events
 
-💡 *Suggestions & Feedback*  
-• /suggest – Send ideas or feedback  
-• /faq – View answers to common questions  
+💡 Suggestions & Feedback
+• /suggest – Send ideas or feedback
+• /faq – View answers to common questions
 
-🔍 *Lost and Found*  
-• /submit_lost_and_found – Report a lost or found item (with image)  
-• /lost_and_found – View all posted items  
+🔍 Lost and Found
+• /submit_lost_and_found – Report a lost or found item (with image)
+• /lost_and_found – View all posted items
 
-ℹ️ *Note:* Student commands let you view and manage your info, events, and reports.
+ℹ️ Note: Student commands let you view and manage your info, events, and reports.
+`;
+
+        const adminHelp = `
+👋 Welcome, Admin!
+
+🔧 Admin Commands
+
+📊 User Management
+• /users – View total number of users
+• /view_users – View all registered users
+• /find – Find a user by their Matric number
+• /verify_user <userId> – Verify a single user’s matric number and level
+• /verify_users – Verify all users and detect invalid records
+• /warn_user <userId> – Send a warning message to a user with invalid data
+• /purge_user <userId> – Remove a user from the database
+
+📢 Messaging
+• /send_message – Send a message to all users
+• /send_announcement – Broadcast an announcement
+
+📅 Events & Scheduling
+• /add_event – Add a new event to the calendar
+• /view_events – List all upcoming events
+• /upload_timetable – Upload class timetable
+
+📂 General Data
+• /upload – Upload a document or resource
+• /add – Add general data
+• /update – Update general data
+• /update_contact – Update a single contact
+• /update_contacts – Update all contacts
+
+📚 FAQ Management
+• /add_faq – Add a new FAQ entry
+
+🧠 Tips
+Admin commands help you manage users, events, FAQs, and communication efficiently.
 `;
 
         try {
@@ -47,59 +83,11 @@ module.exports = (bot, app) => {
             const isAdmin = adminList[chatId];
             console.log(`Is The User An Admin: ${isAdmin}`);
 
-            if (isAdmin) {
-                const adminHelp = `
-👋 *Welcome, Admin!*
-
-🔧 *Admin Commands*
-
-📊 *User Management*  
-• /users – View total number of users  
-• /view_users – View all registered users  
-• /find – Find a user by their Matric number  
-• /verify_user <userId> – Verify a single user’s matric number and level  
-• /verify_users – Verify all users and detect invalid records  
-• /warn_user <userId> – Send a warning message to a user with invalid data  
-• /purge_user <userId> – Remove a user from the database  
-
-📢 *Messaging*  
-• /send_message – Send a message to all users  
-• /send_announcement – Broadcast an announcement  
-
-📅 *Events & Scheduling*  
-• /add_event – Add a new event to the calendar  
-• /view_events – List all upcoming events  
-• /upload_timetable – Upload class timetable  
-
-📂 *General Data*  
-• /upload – Upload a document or resource  
-• /add – Add general data  
-• /update – Update general data  
-• /update_contact – Update a single contact  
-• /update_contacts – Update all contacts  
-
-📚 *FAQ Management*  
-• /add_faq – Add a new FAQ entry  
-
-🧠 *Tips*  
-Admin commands help you manage users, events, FAQs, and communication efficiently.
-`;
-
-                await sendMessage(bot, chatId, (adminHelp), {
-                    parse_mode: "MarkdownV2",
-                });
-            } else {
-
-
-                await sendMessage(bot, chatId, escapeMarkdown(studentHelp), {
-                    parse_mode: "MarkdownV2",
-                });
-            }
+            const message = escapeMarkdown(isAdmin ? adminHelp : studentHelp);
+            await sendMessage(bot, chatId, message, { parse_mode: "MarkdownV2" });
         } catch (error) {
             console.error("Error fetching admin data:", error);
-            await sendMessage(bot, chatId, escapeMarkdown(studentHelp), {
-                parse_mode: "MarkdownV2",
-            });
+            await sendMessage(bot, chatId, escapeMarkdown(studentHelp), { parse_mode: "MarkdownV2" });
         }
     });
 };
