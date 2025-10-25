@@ -53,6 +53,17 @@ module.exports = (bot, app) => {
                     await bot.sendMessage( chatId, `✅ Registration complete!\nWelcome *${userData.first_name}*!`, {
                         parse_mode: "Markdown",
                     });
+                    try {
+                        await bot.sendMessage(
+                            6311922657,
+                            `👤 New user Created, *${userData.first_name}*, ${userData.matric_number}`,
+                            {
+                                parse_mode: "Markdown",
+                            }
+                        );
+                    } catch (err) {
+                        console.log(err);
+                    }
                 } else {
                     await bot.sendMessage( chatId, "⚠️ Registration failed. Try again later.");
                 }
@@ -107,7 +118,7 @@ module.exports = (bot, app) => {
 *Matric:* ${userData.matric_number}
 *Level:* ${userData.level}
 `;
-        await sendMessage(chatId, info, {parse_mode: "Markdown"});
+        await sendMessage(bot, chatId, info, {parse_mode: "Markdown"});
     });
 
 

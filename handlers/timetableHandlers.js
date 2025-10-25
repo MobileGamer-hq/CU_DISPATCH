@@ -30,6 +30,7 @@ module.exports = (bot, app) => {
         else return;
 
         const filePath = path.join(__dirname, "files", fileName);
+        console.log("File Path: ", filePath);
 
         try {
             await bot.sendMessage(chatId, "📤 Sending your selected timetable...");
