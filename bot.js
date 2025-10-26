@@ -21,7 +21,7 @@ class TelegramBotApp {
 
         this.token = process.env.BOT_TOKEN;
         this.port = process.env.PORT || 3000;
-        this.url = "https://cu-dispatch.onrender.com";
+        this.url = process.env.URL;
 
         // this.bot = new TelegramBot(this.token,  { polling: true });
         this.bot = new TelegramBot(this.token);
@@ -48,7 +48,7 @@ class TelegramBotApp {
 
         this.app.get("/", (req, res) => {
             // Set the webhook
-            // this.bot.setWebHook(`${this.url}/bot${this.token}`);
+            this.bot.setWebHook(`${this.url}/bot${this.token}`);
             res.send("Council bot is running!\nWebHook set");
         });
     }
