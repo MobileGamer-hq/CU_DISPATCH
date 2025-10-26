@@ -29,7 +29,7 @@ module.exports = (bot, app) => {
         else if (data === "exam_timetable") fileName = "exam_timetable.pdf";
         else return;
 
-        const filePath = path.join(__dirname, "files", fileName);
+        const filePath = path.join(__dirname, "../files", fileName);
         console.log("File Path: ", filePath);
 
         try {

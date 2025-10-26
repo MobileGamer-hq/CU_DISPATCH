@@ -2,7 +2,7 @@ const admin = require("../utilities/firebase");
 const { validateMatricNumber, validateLevel } = require("../utilities/verification");
 const { isUserAdmin, deleteUser } = require("../utilities/database");
 
-// ✅ Temporary in-memory store (instead of app.locals)
+// ✅ Temporary in-memory store
 const tempStore = {
     invalidUsers: [],
 };
@@ -55,7 +55,6 @@ module.exports = (bot, app) => {
                 `⚠️ Issues for user ${targetUserId}:\n- ${problems.join("\n- ")}`
             );
 
-            // Try DMing user
             try {
                 await bot.sendMessage(
                     targetUserId,
@@ -120,9 +119,8 @@ module.exports = (bot, app) => {
                 }
             }
 
-            if (invalidUsers.length === 0) {
+            if (invalidUsers.length === 0)
                 return bot.sendMessage(callerChatId, "✅ All users are valid!");
-            }
 
             let message = `⚠️ Found ${invalidUsers.length} user(s) with problems:\n\n`;
             for (const [i, user] of invalidUsers.entries()) {
@@ -139,8 +137,8 @@ module.exports = (bot, app) => {
                 reply_markup: {
                     inline_keyboard: [
                         [
-                            { text: "⚠️ Send Warnings", callback_data: "warn_invalid_users" },
-                            { text: "🗑 Purge Users", callback_data: "purge_invalid_users" },
+                            { text: "⚠️ Send Warnings", callback_data: "verify:warn" },
+                            { text: "🗑 Purge Users", callback_data: "verify:purge" },
                         ],
                     ],
                 },
@@ -159,16 +157,18 @@ module.exports = (bot, app) => {
         }
     });
 
-    // ⚠️ Handle warning or purge actions
+    // ⚙️ Central callback handler (scoped by prefix)
     bot.on("callback_query", async (query) => {
-        const action = query.data;
+        const [prefix, action] = query.data.split(":");
         const chatId = query.message.chat.id;
-        const invalidUsers = tempStore.invalidUsers || [];
 
+        if (prefix !== "verify") return; // ✅ Ignore unrelated callbacks
+
+        const invalidUsers = tempStore.invalidUsers || [];
         if (invalidUsers.length === 0)
             return bot.sendMessage(chatId, "⚠️ No invalid users stored. Run /verify_users again.");
 
-        if (action === "warn_invalid_users") {
+        if (action === "warn") {
             for (const user of invalidUsers) {
                 try {
                     await bot.sendMessage(
@@ -179,15 +179,13 @@ module.exports = (bot, app) => {
                     );
                 } catch (err) {
                     console.warn(`Could not warn user ${user.uid}:`, err.message);
-                    // await deleteUser(user.uid);
-                    console.log("Deleting User.");
                 }
             }
 
             await bot.sendMessage(chatId, `✅ Sent warnings to ${invalidUsers.length} user(s).`);
         }
 
-        if (action === "purge_invalid_users") {
+        if (action === "purge") {
             const ref = admin.database().ref("users");
             const purged = [];
 
@@ -210,7 +208,7 @@ module.exports = (bot, app) => {
         }
     });
 
-    // ✅ Direct manual admin commands
+    // ✅ Manual commands
     bot.onText(/\/warn_user\s+(\d+)/, async (msg, match) => {
         const callerId = msg.from.id.toString();
         const chatId = msg.chat.id;
