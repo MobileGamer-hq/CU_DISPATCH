@@ -54,6 +54,7 @@ class TelegramBotApp {
 
         this.app.get("/ping", (req, res) => {
             console.log("Pinging The URL...");
+            res.send("Council bot is running! \nPing Successful");
         })
     }
 
