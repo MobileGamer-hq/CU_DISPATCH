@@ -51,6 +51,10 @@ class TelegramBotApp {
             this.bot.setWebHook(`${this.url}/bot${this.token}`);
             res.send("Council bot is running!\nWebHook set");
         });
+
+        this.app.get("/ping", (req, res) => {
+            console.log("Pinging The URL...");
+        })
     }
 
     loadHandlers() {
