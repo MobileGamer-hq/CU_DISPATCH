@@ -33,7 +33,7 @@ module.exports = (bot, app) => {
             case "awaiting_last_name":
                 userTempData[chatId].last_name = text;
                 userStates[chatId] = "awaiting_matric";
-                await bot.sendMessage(chatId, "📚 Enter your *matric number*:", {parse_mode: "Markdown"});
+                await bot.sendMessage(chatId, "📚 Enter your *Matric or Reg number*:", {parse_mode: "Markdown"});
                 break;
 
             case "awaiting_matric":
