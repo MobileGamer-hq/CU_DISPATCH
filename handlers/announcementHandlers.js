@@ -14,7 +14,7 @@ module.exports = (bot, app) => {
         // Check if user is admin
         const isAdmin = isUserAdmin(chatId)
 
-        if (!isAdmin.exists()) {
+        if (!isAdmin) {
             return bot.sendMessage(chatId, "❌ You are not authorized to use this command.");
         }
 

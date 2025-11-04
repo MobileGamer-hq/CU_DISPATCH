@@ -61,14 +61,7 @@ module.exports = (bot, app) => {
 📅 Events & Scheduling
 • /add_event – Add a new event to the calendar
 • /view_events – List all upcoming events
-• /upload_timetable – Upload class timetable
 
-<!--📂 General Data-->
-<!--• /upload – Upload a document or resource-->
-<!--• /add – Add general data-->
-<!--• /update – Update general data-->
-<!--• /update_contact – Update a single contact-->
-<!--• /update_contacts – Update all contacts-->
 
 📚 FAQ Management
 • /add_faq – Add a new FAQ entry
@@ -76,6 +69,14 @@ module.exports = (bot, app) => {
 🧠 Tips
 Admin commands help you manage users, events, FAQs, and communication efficiently.
 `;
+        // • /upload_timetable – Upload class timetable
+
+        // <!--📂 General Data-->
+        // <!--• /upload – Upload a document or resource-->
+        // <!--• /add – Add general data-->
+        // <!--• /update – Update general data-->
+        // <!--• /update_contact – Update a single contact-->
+        // <!--• /update_contacts – Update all contacts-->
 
         try {
             const snapshot = await admin.database().ref("admins").once("value");
@@ -84,10 +85,10 @@ Admin commands help you manage users, events, FAQs, and communication efficientl
             console.log(`Is The User An Admin: ${isAdmin}`);
 
             const message = escapeMarkdown(isAdmin ? adminHelp : studentHelp);
-            await sendMessage(bot, chatId, message, { parse_mode: "MarkdownV2" });
+            await sendMessage(bot, chatId, message, {parse_mode: "MarkdownV2"});
         } catch (error) {
             console.error("Error fetching admin data:", error);
-            await sendMessage(bot, chatId, escapeMarkdown(studentHelp), { parse_mode: "MarkdownV2" });
+            await sendMessage(bot, chatId, escapeMarkdown(studentHelp), {parse_mode: "MarkdownV2"});
         }
     });
 };
