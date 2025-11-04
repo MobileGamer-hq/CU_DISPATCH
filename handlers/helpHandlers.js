@@ -63,12 +63,12 @@ module.exports = (bot, app) => {
 • /view_events – List all upcoming events
 • /upload_timetable – Upload class timetable
 
-📂 General Data
-• /upload – Upload a document or resource
-• /add – Add general data
-• /update – Update general data
-• /update_contact – Update a single contact
-• /update_contacts – Update all contacts
+<!--📂 General Data-->
+<!--• /upload – Upload a document or resource-->
+<!--• /add – Add general data-->
+<!--• /update – Update general data-->
+<!--• /update_contact – Update a single contact-->
+<!--• /update_contacts – Update all contacts-->
 
 📚 FAQ Management
 • /add_faq – Add a new FAQ entry

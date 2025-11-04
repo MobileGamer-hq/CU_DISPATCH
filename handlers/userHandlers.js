@@ -9,7 +9,7 @@ module.exports = (bot, app) => {
     bot.onText(/\/(start|join)/, async (msg) => {
         const chatId = msg.chat.id;
 
-        await bot.sendMessage( chatId, "👋 Hi! What's your *first name*?", {
+        await bot.sendMessage(chatId, "👋 Hi! What's your *first name*?", {
             parse_mode: "Markdown",
         });
 
@@ -39,7 +39,7 @@ module.exports = (bot, app) => {
             case "awaiting_matric":
                 userTempData[chatId].matric_number = text;
                 userStates[chatId] = "awaiting_level";
-                await bot.sendMessage( chatId, "🎓 What level are you in? eg 100", {parse_mode: "Markdown"});
+                await bot.sendMessage(chatId, "🎓 What level are you in? eg 100", {parse_mode: "Markdown"});
                 break;
 
             case "awaiting_level":
@@ -50,7 +50,7 @@ module.exports = (bot, app) => {
 
                 const success = await addUser(msg.from.id.toString(), userData);
                 if (success) {
-                    await bot.sendMessage( chatId, `✅ Registration complete!\nWelcome *${userData.first_name}*!`, {
+                    await bot.sendMessage(chatId, `✅ Registration complete!\nWelcome *${userData.first_name}*!`, {
                         parse_mode: "Markdown",
                     });
                     try {
@@ -65,7 +65,7 @@ module.exports = (bot, app) => {
                         console.log(err);
                     }
                 } else {
-                    await bot.sendMessage( chatId, "⚠️ Registration failed. Try again later.");
+                    await bot.sendMessage(chatId, "⚠️ Registration failed. Try again later.");
                 }
 
                 delete userStates[chatId];
@@ -122,79 +122,110 @@ module.exports = (bot, app) => {
     });
 
 
-
     // /edit_info
-    bot.onText(/\/edit_info/, async (msg) => {
+    // /edit_info or /update_info
+    bot.onText(/\/(edit_info|update_info)/, async (msg) => {
         const chatId = msg.chat.id;
         const userId = msg.from.id.toString();
 
         const userData = await getUser(userId);
         if (!userData) {
-            return await bot.sendMessage( chatId, "😕 No data found. Use /start first to register.");
+            return await bot.sendMessage(
+                chatId,
+                "😕 No data found. Use /start first to register."
+            );
         }
 
-        await bot.sendMessage( chatId,
-            "✏️ What would you like to edit?\nChoose one:\n\n1️⃣ First Name\n2️⃣ Last Name\n3️⃣ Matric Number\n4️⃣ Level",
-            { parse_mode: "Markdown" }
-        );
+        // Inline buttons for choosing what to edit
+        const options = {
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        {text: "📝 First Name", callback_data: "edit_first_name"},
+                        {text: "📝 Last Name", callback_data: "edit_last_name"},
+                    ],
+                    [
+                        {text: "🎓 Matric Number", callback_data: "edit_matric_number"},
+                        {text: "📚 Level", callback_data: "edit_level"},
+                    ],
+                ],
+            },
+        };
 
-        app.userStates[chatId] = "awaiting_edit_choice";
+        await bot.sendMessage(
+            chatId,
+            "✏️ What would you like to edit?\nSelect an option below:",
+            options
+        );
     });
 
+// Handle button clicks
+    bot.on("callback_query", async (query) => {
+        const chatId = query.message.chat.id;
+        const userId = query.from.id.toString();
+        const data = query.data;
+
+        const fieldMap = {
+            edit_first_name: "first_name",
+            edit_last_name: "last_name",
+            edit_matric_number: "matric_number",
+            edit_level: "level",
+        };
+
+        const field = fieldMap[data];
+        if (!field) return;
+
+        app.userTempData[chatId] = {field};
+        app.userStates[chatId] = "awaiting_new_value";
+
+        await bot.sendMessage(
+            chatId,
+            `✍️ Enter your new *${field.replace("_", " ")}*:`,
+            {parse_mode: "Markdown"}
+        );
+
+        // Acknowledge the button press
+        await bot.answerCallbackQuery(query.id);
+    });
+
+// Handle new input after user chooses a field
     bot.on("message", async (msg) => {
         const chatId = msg.chat.id;
-        const text = msg.text;
         const userId = msg.from.id.toString();
+        const text = msg.text?.trim();
 
-        if (!app.userStates[chatId]) return;
+        if (app.userStates[chatId] !== "awaiting_new_value") return;
 
-        switch (app.userStates[chatId]) {
-            case "awaiting_edit_choice":
-                let field = null;
+        const {field} = app.userTempData[chatId];
+        if (!field) return;
 
-                if (["1", "first name"].includes(text.toLowerCase())) field = "first_name";
-                else if (["2", "last name"].includes(text.toLowerCase())) field = "last_name";
-                else if (["3", "matric", "matric number"].includes(text.toLowerCase())) field = "matric_number";
-                else if (["4", "level"].includes(text.toLowerCase())) field = "level";
+        try {
+            const db = require("../utilities/firebase").database();
+            await db.ref(`users/${userId}/${field}`).set(text);
 
-                if (!field) {
-                    return await sendMessage(bot, chatId, "⚠️ Please choose 1, 2, 3, or 4.");
-                }
+            await bot.sendMessage(
+                chatId,
+                `✅ Your *${field.replace("_", " ")}* has been updated to: *${text}*`,
+                {parse_mode: "Markdown"}
+            );
 
-                app.userTempData[chatId] = { field };
-                app.userStates[chatId] = "awaiting_new_value";
-                await bot.sendMessage(chatId, `✍️ Enter your new *${field.replace("_", " ")}*:`, { parse_mode: "Markdown" });
-                break;
-
-            case "awaiting_new_value":
-                const newValue = text.trim();
-                const { field: fieldToUpdate } = app.userTempData[chatId];
-
-                try {
-                    const db = require("../utilities/firebase").database();
-                    await db.ref(`users/${userId}/${fieldToUpdate}`).set(newValue);
-
-                    await bot.sendMessage( chatId, `✅ Your *${fieldToUpdate.replace("_", " ")}* has been updated to: *${newValue}*`, { parse_mode: "Markdown" });
-
-                    const updatedUser = await getUser(userId);
-                    const info = `
+            const updatedUser = await getUser(userId);
+            const info = `
 🧾 *Updated Info:*
 *First:* ${updatedUser.first_name}
 *Last:* ${updatedUser.last_name}
 *Matric:* ${updatedUser.matric_number}
 *Level:* ${updatedUser.level}
-`;
-                    await sendMessage(bot, chatId, info, { parse_mode: "Markdown" });
+        `;
 
-                } catch (err) {
-                    console.error("Error updating user info:", err);
-                    await bot.sendMessage( chatId, "⚠️ Failed to update info. Try again later.");
-                }
-
-                delete app.userStates[chatId];
-                delete app.userTempData[chatId];
-                break;
+            await bot.sendMessage(chatId, info, {parse_mode: "Markdown"});
+        } catch (err) {
+            console.error("Error updating user info:", err);
+            await bot.sendMessage(chatId, "⚠️ Failed to update info. Try again later.");
         }
+
+        delete app.userStates[chatId];
+        delete app.userTempData[chatId];
     });
 
 };
