@@ -64,7 +64,7 @@ module.exports = (bot, app) => {
             let failCount = 0;
 
             const formattedAnnouncement =
-                `📢 *Announcement from ${newAnnouncement.from}:*\n\n${newAnnouncement.message}`;
+                `📢 *Announcement`;
 
             // Send to all users
             for (const uid of userIds) {
