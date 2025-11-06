@@ -84,7 +84,7 @@ async function getAllUsers() {
 async function deleteUser(userId) {
     try {
         const db = admin.database();
-        await db.ref(`users/${userId}`).remove();
+        // await db.ref(`users/${userId}`).remove();
         console.log(`✅ User ${userId} deleted successfully.`);
     } catch (error) {
         console.error("❌ Error deleting user:", error);

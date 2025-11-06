@@ -25,37 +25,72 @@ module.exports = (bot, app) => {
         );
     });
 
-    // Step 2: Listen for admin reply after command
     bot.on("message", async (msg) => {
         const chatId = msg.chat.id;
         const userId = msg.from.id.toString();
+        const state = pendingMessages[userId];
 
-        // Ignore commands or unrelated messages
-        if (msg.text && (!pendingAnnouncements[userId] || msg.text.startsWith("/")))
-            return;
+        // Ignore if not in message flow or is a command
+        if (!state || (msg.text && msg.text.startsWith("/"))) return;
 
-        const announcementText = msg.text;
-        const db = admin.database();
+        // ✅ Step 1: Get message text
+        if (state.step === "awaiting_message" && msg.text) {
+            const announcementText = msg.text;
+            state.message = `📢 *Announcement*\n${announcementText}`;
+            state.step = "ask_image";
+            return bot.sendMessage(chatId, "🖼 Do you want to send this message *with an image*? (yes/no)", {
+                parse_mode: "Markdown",
+            });
+        }
 
+        // ✅ Step 2: Ask if image is wanted
+        if (state.step === "ask_image" && msg.text) {
+            const reply = msg.text.trim().toLowerCase();
+            if (reply === "yes") {
+                state.step = "awaiting_image";
+                return bot.sendMessage(chatId, "📤 Please upload the image you want to include.");
+            } else if (reply === "no") {
+                state.step = "ready";
+                return broadcastMessage(bot, chatId, userId, state.message);
+            } else {
+                return bot.sendMessage(chatId, "⚠️ Please reply with *yes* or *no*.", {
+                    parse_mode: "Markdown",
+                });
+            }
+        }
+
+        // ✅ Step 3: Receive image
+        if (state.step === "awaiting_image" && msg.photo) {
+            const fileId = msg.photo[msg.photo.length - 1].file_id; // largest resolution
+            state.image = fileId;
+            state.step = "ready";
+
+            try{
+                // Save announcement in DB
+                const newAnnouncement = {
+                    message: announcementText,
+                    from: msg.from.username || msg.from.first_name || "Admin",
+                    timestamp: Date.now(),
+                };
+
+                await db.ref("announcements").push(newAnnouncement);
+
+                await bot.sendMessage(chatId, "✅ Announcement saved successfully.\n📨 Sending to all users...");
+            }catch (e) {
+                console.error(e);
+            }
+            return broadcastMessage(bot, chatId, userId, state.message, state.image);
+        }
+    });
+
+    async function broadcastMessage(bot, chatId, userId, messageText, image = null) {
         try {
-            // Save announcement in DB
-            const newAnnouncement = {
-                message: announcementText,
-                from: msg.from.username || msg.from.first_name || "Admin",
-                timestamp: Date.now(),
-            };
-
-            await db.ref("announcements").push(newAnnouncement);
-
-            await bot.sendMessage(chatId, "✅ Announcement saved successfully.\n📨 Sending to all users...");
-
-            // Fetch all users
-            const usersSnapshot = await db.ref("users").once("value");
-            const users = usersSnapshot.val();
+            const usersSnap = await admin.database().ref("users").once("value");
+            const users = usersSnap.val();
 
             if (!users) {
-                bot.sendMessage(chatId, "⚠️ No users found in the database.");
-                delete pendingAnnouncements[userId];
+                await bot.sendMessage(chatId, "🚫 No users found in the database.");
+                delete pendingMessages[userId];
                 return;
             }
 
@@ -63,23 +98,18 @@ module.exports = (bot, app) => {
             let successCount = 0;
             let failCount = 0;
 
-            const formattedAnnouncement =
-                `📢 *Announcement`;
-
-            // Send to all users
             for (const uid of userIds) {
-                const user = users[uid];
-                const recipientId = user.chatId || uid; // Use stored chatId or UID fallback
-
-                if (recipientId) {
-                    try {
-                        await sendMessage(bot, recipientId, formattedAnnouncement, { parse_mode: "Markdown" });
-                        successCount++;
-                    } catch (err) {
-                        console.error(`❌ Failed to send to ${user.first_name || "user"}:`, err.message);
-                        failCount++;
-                        await deleteUser(uid)
+                try {
+                    if (image) {
+                        await bot.sendPhoto(uid, image, { caption: messageText, parse_mode: "Markdown" });
+                    } else {
+                        await sendMessage(bot, uid, messageText);
                     }
+                    successCount++;
+                } catch (err) {
+                    console.error(`❌ Failed to send to ${uid}:`, err.message);
+                    failCount++;
+                    await deleteUser(uid);
                 }
             }
 
@@ -87,13 +117,13 @@ module.exports = (bot, app) => {
                 chatId,
                 `✅ Announcement sent to ${successCount} users.\n❌ Failed to send to ${failCount} users.`
             );
-        } catch (error) {
-            console.error("🔥 Error sending announcement:", error);
-            bot.sendMessage(chatId, "❌ An error occurred while sending announcements.");
+        } catch (err) {
+            console.error("🔥 Error broadcasting message:", err);
+            await bot.sendMessage(chatId, "❌ An error occurred while broadcasting.");
         }
 
-        delete pendingAnnouncements[userId]; // Reset admin state
-    });
+        delete pendingMessages[userId]; // cleanup
+    }
 
     // 🟣 Step 3: Let users view recent announcements
     bot.onText(/\/announcements/, async (msg) => {
