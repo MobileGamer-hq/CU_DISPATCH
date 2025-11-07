@@ -62,7 +62,7 @@ module.exports = (bot, app) => {
         }
 
         try {
-            bot.sendMessage(chatId, "About to start Clean Up...");
+            bot.sendMessage(chatId, "Cleaning Up...");
 
             const ref = admin.database().ref("botChats");
             const snapshot = await ref.once("value");
