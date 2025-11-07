@@ -50,7 +50,7 @@ module.exports = (bot, app) => {
     });
 
     // 🔹 Get total users command
-    bot.onText(/\/backup_data/, async (msg) => {
+    bot.onText(/\/get_backup/, async (msg) => {
         const chatId = msg.chat.id;
         const userId = msg.from.id;
 
