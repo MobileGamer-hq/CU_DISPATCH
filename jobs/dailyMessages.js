@@ -8,6 +8,11 @@ const {
 } = require("../data/messages");
 
 module.exports = function (bot, appInstance) {
+    // Random 1-in-5 chance
+    function shouldSend() {
+        return Math.random() < 0.5;  // 20% chance
+    }
+
     // Send random message
     function sendRandomMessage(chatId, list) {
         const randomIndex = Math.floor(Math.random() * list.length);
@@ -24,6 +29,13 @@ module.exports = function (bot, appInstance) {
 
     // Morning message (7AM)
     cron.schedule("0 7 * * *", async () => {
+        console.log("🌅 Morning cron triggered...");
+
+        if (!shouldSend()) {
+            console.log("🌅 Skipped — 1-in-5 chance failed.");
+            return;
+        }
+
         console.log("🌅 Sending morning messages...");
         const users = await getUsersFromFirebase();
         if (users) Object.keys(users).forEach(id => sendRandomMessage(id, morningMessages));
@@ -31,6 +43,13 @@ module.exports = function (bot, appInstance) {
 
     // Midday message (12PM)
     cron.schedule("0 12 * * *", async () => {
+        console.log("☀️ Midday cron triggered...");
+
+        if (!shouldSend()) {
+            console.log("☀️ Skipped — 1-in-5 chance failed.");
+            return;
+        }
+
         console.log("☀️ Sending midday messages...");
         const users = await getUsersFromFirebase();
         if (users) Object.keys(users).forEach(id => sendRandomMessage(id, midDayMessages));
@@ -38,10 +57,15 @@ module.exports = function (bot, appInstance) {
 
     // Evening message (8PM)
     cron.schedule("0 20 * * *", async () => {
+        console.log("🌇 Evening cron triggered...");
+
+        if (!shouldSend()) {
+            console.log("🌇 Skipped — 1-in-5 chance failed.");
+            return;
+        }
+
         console.log("🌇 Sending evening messages...");
         const users = await getUsersFromFirebase();
         if (users) Object.keys(users).forEach(id => sendRandomMessage(id, eveningMessages));
     });
-
-
 };
