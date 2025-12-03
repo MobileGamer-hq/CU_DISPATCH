@@ -37,8 +37,8 @@ module.exports = function (bot, appInstance) {
         }
 
         console.log("🌅 Sending morning messages...");
-        const users = await getUsersFromFirebase();
-        if (users) Object.keys(users).forEach(id => sendRandomMessage(id, morningMessages));
+        // const users = await getUsersFromFirebase();
+        // if (users) Object.keys(users).forEach(id => sendRandomMessage(id, morningMessages));
     });
 
     // Midday message (12PM)
@@ -51,8 +51,8 @@ module.exports = function (bot, appInstance) {
         }
 
         console.log("☀️ Sending midday messages...");
-        const users = await getUsersFromFirebase();
-        if (users) Object.keys(users).forEach(id => sendRandomMessage(id, midDayMessages));
+        // const users = await getUsersFromFirebase();
+        // if (users) Object.keys(users).forEach(id => sendRandomMessage(id, midDayMessages));
     });
 
     // Evening message (8PM)
@@ -65,7 +65,7 @@ module.exports = function (bot, appInstance) {
         }
 
         console.log("🌇 Sending evening messages...");
-        const users = await getUsersFromFirebase();
-        if (users) Object.keys(users).forEach(id => sendRandomMessage(id, eveningMessages));
+        // const users = await getUsersFromFirebase();
+        // if (users) Object.keys(users).forEach(id => sendRandomMessage(id, eveningMessages));
     });
 };
