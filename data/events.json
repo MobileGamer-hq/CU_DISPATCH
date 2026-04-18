@@ -1,0 +1,200 @@
+{
+  "session": "2025/2026",
+  "semester": "Omega",
+  "events": [
+    {
+      "activity": "COE X CST Hackathon",
+      "date": "April 2026",
+      "week": "4",
+      "month": "April"
+    },
+    {
+      "activity": "Premium Trust Bank Employability Skill Training",
+      "date": "April 17, 2026",
+      "week": "4"
+    },
+    {
+      "activity": "Next Chapter Conference: 4th Edition",
+      "date": "April 17, 2026",
+      "week": "4"
+    },
+    {
+      "activity": "Trinity Conference",
+      "date": "April 18, 2026",
+      "week": "4"
+    },
+    {
+      "activity": "HSLXNOTION",
+      "date": "April 18, 2026",
+      "week": "4"
+    },
+    {
+      "activity": "Great Talks Nigeria 2026: British Council x CU",
+      "date": "April 21, 2026",
+      "week": "5"
+    },
+    {
+      "activity": "Test 1 Begins",
+      "date": "April 20 - April 24, 2026",
+      "week": "5"
+    },
+    {
+      "activity": "XPRESS: TED x Covenant University 2026",
+      "date": "April 25, 2026",
+      "week": "5"
+    },
+    {
+      "activity": "Departmental Luncheon Events",
+      "date": "TBD",
+      "week": "5"
+    },
+    {
+      "activity": "UG Results Revalidation/Correction",
+      "date": "April 24 - May 4, 2026",
+      "week": "5, 6, 7"
+    },
+    {
+      "activity": "Workers Day (National Event)",
+      "date": "May 1, 2026",
+      "week": "6",
+      "month": "May"
+    },
+    {
+      "activity": "Liberation Assembly (Liberation Mandate Anniversary)",
+      "date": "May 2, 2026",
+      "week": "6"
+    },
+    {
+      "activity": "Final Year Students Portraits Shoot",
+      "date": "May 1 - 3, 2026; May 8 - 10, 2026",
+      "week": "6, 7"
+    },
+    {
+      "activity": "Mid-semester Examination",
+      "date": "May 15 - 16, 2026; May 22 - 23, 2026",
+      "week": "8, 9"
+    },
+    {
+      "activity": "College Week",
+      "date": "May 25 - May 29, 2026",
+      "week": "10"
+    },
+    {
+      "activity": "Trade Fair",
+      "date": "May 26 - May 28, 2026",
+      "week": "10",
+      "note": "Tentative"
+    },
+    {
+      "activity": "EDS Day",
+      "date": "May 29, 2026",
+      "week": "10",
+      "note": "Tentative"
+    },
+    {
+      "activity": "Inaugural Lecture",
+      "date": "May 29, 2026",
+      "week": "10"
+    },
+    {
+      "activity": "Test 2",
+      "date": "June 1 - June 5, 2026",
+      "week": "11",
+      "month": "June"
+    },
+    {
+      "activity": "PG Students’ Week (ASPIRE 9.0)",
+      "date": "June 1 - June 6, 2026",
+      "week": "11"
+    },
+    {
+      "activity": "Heroes 2026: Adullam",
+      "date": "June 2026",
+      "week": "---",
+      "note": "TBD"
+    },
+    {
+      "activity": "P31 Women’s Conference",
+      "date": "June 2026",
+      "week": "---",
+      "note": "TBD"
+    },
+    {
+      "activity": "External Moderation of Final-Year Q & M Guides",
+      "date": "June 8 - June 19, 2026",
+      "week": "12, 13"
+    },
+    {
+      "activity": "CIMUN 2025/2026",
+      "date": "June 8 - June 12, 2026",
+      "week": "12, 13"
+    },
+    {
+      "activity": "Final-Year Project Defense",
+      "date": "June 15 - June 16, 2026",
+      "week": "12, 13"
+    },
+    {
+      "activity": "Revision Week",
+      "date": "June 22 - June 26, 2026",
+      "week": "14"
+    },
+    {
+      "activity": "Inaugural Lecture",
+      "date": "June 26, 2026",
+      "week": "14"
+    },
+    {
+      "activity": "UG Omega Semester Examinations",
+      "date": "June 29 - July 17, 2026",
+      "week": "15, 16, 17"
+    },
+    {
+      "activity": "UG Students Vacation",
+      "date": "July 18, 2026",
+      "week": "17",
+      "month": "July"
+    },
+    {
+      "activity": "2025/2026 TTG",
+      "date": "July 20 - July 31, 2026",
+      "week": "19, 20"
+    },
+    {
+      "activity": "Postgraduate Omega Semester Examinations",
+      "date": "July 27 - August 7, 2026",
+      "week": "19, 20"
+    },
+    {
+      "activity": "PG Students Omega Semester Break Begins",
+      "date": "August 8, 2026",
+      "week": "20",
+      "month": "August"
+    },
+    {
+      "activity": "SWEP",
+      "date": "July 27 - September 4, 2026",
+      "week": "19 - 24"
+    },
+    {
+      "activity": "Final Year Omega Make-up Exam",
+      "date": "August 3 - August 4, 2026",
+      "week": "20"
+    },
+    {
+      "activity": "End of 2025/2026 Academic Session",
+      "date": "August 14, 2026",
+      "week": "21"
+    },
+    {
+      "activity": "2025/2026 Convocation Ceremony",
+      "date": "September 24 - September 25, 2026",
+      "month": "September"
+    }
+  ],
+  "notes": [
+    "Chaplaincy Programs have not been published for public notice yet.",
+    "Tentative events are marked accordingly.",
+    "TBD means To Be Determined."
+  ]
+}

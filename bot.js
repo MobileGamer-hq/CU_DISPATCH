@@ -45,6 +45,17 @@ class TelegramBotApp {
         });
 
 
+        this.app.post(`/webhook`, (req, res) => {
+            try {
+                this.bot.processUpdate(req.body);
+                res.sendStatus(200);
+            } catch (err) {
+                console.error(`Error: ${err}`);
+                res.status(500).send(err);
+            }
+        });
+
+
 
         this.app.get("/", (req, res) => {
             // Set the webhook
