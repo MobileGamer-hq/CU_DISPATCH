@@ -6,7 +6,7 @@ const fs = require("fs");
 require("dotenv").config();
 
 const admin = require("./utilities/firebase");
-const { commands, adminCommands } = require("./data/commands");
+const { userCommands, adminCommands } = require("./data/commands");
 const {
     getUser,
     addUser,
@@ -89,6 +89,9 @@ class TelegramBotApp {
     start() {
         this.app.listen(this.port, () => {
             console.log(`🚀 Bot server running on port ${this.port}`);
+            this.bot.setMyCommands(userCommands).catch((err) => {
+                console.error("⚠️ Failed to set default bot commands:", err.message);
+            });
         });
     }
 }
