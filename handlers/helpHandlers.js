@@ -40,15 +40,15 @@ You have access to admin management, broadcasting, and verification commands:
 📊 *User Analytics & Lookup*
 • /users – View total user count & level statistics
 • /view_users – List all registered users with details
-• /find `<matric>` – Find a user by Matric number
+• /find \`<matric>\` – Find a user by Matric number
 
 ⚙️ *User Verification & Management*
-• /add_admin `<matric>` – Make a user an admin by Matric number
-• /remove_user `<matric>` – Delete user from database by Matric
-• /verify_user `<userId>` – Verify single user's details & check issues
+• /add_admin \`<matric>\` – Make a user an admin by Matric number
+• /remove_user \`<matric>\` – Delete user from database by Matric
+• /verify_user \`<userId>\` – Verify single user's details & check issues
 • /verify_users – Scan all database users for invalid records
-• /warn_user `<userId>` – Send warning message to user with bad data
-• /purge_user `<userId>` – Purge an invalid user record
+• /warn_user \`<userId>\` – Send warning message to user with bad data
+• /purge_user \`<userId>\` – Purge an invalid user record
 
 📢 *Broadcasting & Content Management*
 • /send_message – Broadcast a message or photo to all users
