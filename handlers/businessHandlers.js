@@ -53,6 +53,29 @@ module.exports = (bot, app) => {
         return { inline_keyboard: buttons };
     }
 
+    // Helper to safely extract a valid HTTP/HTTPS URL from user input
+    function extractValidUrl(str) {
+        if (!str || typeof str !== "string") return null;
+
+        const match = str.match(/(https?:\/\/[^\s]+|t\.me\/[^\s]+)/i);
+        if (!match) return null;
+
+        let url = match[0].trim();
+        if (url.toLowerCase().startsWith("t.me/")) {
+            url = "https://" + url;
+        }
+
+        try {
+            const parsed = new URL(url);
+            if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+                return url;
+            }
+        } catch (e) {
+            return null;
+        }
+        return null;
+    }
+
     // Format single business profile card
     function formatBusinessCard(b, options = {}) {
         const { isDraft = false, isAdmin = false, isOwner = false } = options;
@@ -64,6 +87,7 @@ module.exports = (bot, app) => {
 
         const tagsFormatted = (b.tags || []).map(t => `#${t.replace(/\s+/g, '')}`).join(" ");
         const ownerDisplay = (b.showOwnerName && b.ownerName) ? `👤 *Owner:* ${b.ownerName}\n` : "";
+        const contactDisplay = b.link ? `🔗 *Contact / Handles:*\n${b.link}\n` : "";
 
         let card = `🏢 *${b.name || "Business"}*\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -71,6 +95,7 @@ module.exports = (bot, app) => {
             `📂 *Category:* ${b.category || "General"}\n` +
             `🏷️ *Tags:* ${tagsFormatted || "#campus"}\n` +
             `📝 *Description:* ${b.description || "No description provided."}\n` +
+            `${contactDisplay}` +
             `${ownerDisplay}`;
 
         if (!isDraft) {
@@ -91,8 +116,9 @@ module.exports = (bot, app) => {
         const rows = [];
         const actionRow = [];
 
-        if (b.link) {
-            actionRow.push({ text: "🔗 Open Link / Contact", url: b.link });
+        const validUrl = extractValidUrl(b.link);
+        if (validUrl) {
+            actionRow.push({ text: "🔗 Open Link", url: validUrl });
         }
         actionRow.push({ text: "⭐ Rate Business", callback_data: `biz_rate_${b.id}` });
         rows.push(actionRow);
