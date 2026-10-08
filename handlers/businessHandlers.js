@@ -52,21 +52,26 @@ module.exports = (bot, app) => {
 
     // Format single business profile card
     function formatBusinessCard(b) {
-        const ratingStars = b.totalRatings > 0 ? "⭐".repeat(Math.round(b.averageRating || 0)) : "⭐ (No ratings yet)";
-        const ratingText = b.totalRatings > 0 ? `${b.averageRating} / 5.0 (${b.totalRatings} review${b.totalRatings > 1 ? 's' : ''})` : "Not rated yet";
+        const hasRatings = b.totalRatings && b.totalRatings > 0;
+        const ratingDisplay = hasRatings
+            ? `${"⭐".repeat(Math.round(b.averageRating || 0))} ${b.averageRating} / 5.0 (${b.totalRatings} review${b.totalRatings > 1 ? 's' : ''})`
+            : "⭐ (No ratings yet)";
+
         const tagsFormatted = (b.tags || []).map(t => `#${t.replace(/\s+/g, '')}`).join(" ");
         const ownerDisplay = (b.showOwnerName && b.ownerName) ? `👤 *Owner:* ${b.ownerName}\n` : "";
-        const regDate = new Date(b.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        const rawDate = b.createdAt ? new Date(b.createdAt) : new Date();
+        const regDate = isNaN(rawDate.getTime()) ? "New Listing" : rawDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        const bizIdDisplay = b.id ? `\`${b.id}\`` : "(Draft)";
 
-        return `🏢 *${b.name}*\n` +
+        return `🏢 *${b.name || "Business"}*\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
-            `⭐ *Rating:* ${ratingStars} (${ratingText})\n` +
+            `⭐ *Rating:* ${ratingDisplay}\n` +
             `📂 *Category:* ${b.category || "General"}\n` +
             `🏷️ *Tags:* ${tagsFormatted || "#campus"}\n` +
             `📝 *Description:* ${b.description || "No description provided."}\n` +
             `${ownerDisplay}` +
             `📅 *Registered:* ${regDate}\n` +
-            `🆔 *ID:* \`${b.id}\``;
+            `🆔 *ID:* ${bizIdDisplay}`;
     }
 
     // Format business card inline actions (Link, Rate)
@@ -154,8 +159,10 @@ module.exports = (bot, app) => {
 
     // ========== BOT COMMAND LISTENERS ==========
 
+    // ========== BOT COMMAND LISTENERS ==========
+
     // Main Directory commands
-    bot.onText(/\/(directory|businesses|catalog)/, async (msg) => {
+    bot.onText(/\/(directory|businesses|catalog)/i, async (msg) => {
         sendDirectoryMenu(msg.chat.id, msg.from.id);
     });
 
@@ -169,37 +176,40 @@ module.exports = (bot, app) => {
     });
 
     // Direct registration command
-    bot.onText(/\/register_business/, async (msg) => {
+    bot.onText(/\/(register_business|registerbusiness)/i, async (msg) => {
         startRegistration(msg.chat.id, msg.from.id);
     });
 
     // My business command
-    bot.onText(/\/my_business/, async (msg) => {
+    bot.onText(/\/(my_business|mybusiness)/i, async (msg) => {
         showMyBusiness(msg.chat.id, msg.from.id);
     });
 
-    // Search command (/search_business <query>)
-    bot.onText(/\/search_business(?:\s+(.+))?/, async (msg, match) => {
-        const query = match[1]?.trim();
+    // Search command (/search_business <query> or /searchbusiness <query>)
+    bot.onText(/\/(search_business|searchbusiness)(?:\s+(.+))?/i, async (msg, match) => {
+        const query = match[2]?.trim();
         if (!query) {
-            return bot.sendMessage(msg.chat.id, "🔍 Usage: `/search_business <keyword or tag>`\nExample: `/search_business food` or `/search_business printing`", { parse_mode: "Markdown" });
+            return bot.sendMessage(msg.chat.id, "🔍 Usage: `/search_business <keyword or tag>`\nExample: `/search_business food` or `/searchbusiness printing`", { parse_mode: "Markdown" });
         }
         const results = await searchBusinesses(query);
         sendBusinessList(msg.chat.id, null, `🔎 *Search Results for "${query}"*`, results);
     });
 
     // Admin commands
-    bot.onText(/\/admin_businesses|\/biz_stats/, async (msg) => {
+    bot.onText(/\/(admin_businesses|adminbusinesses|biz_stats)/i, async (msg) => {
         showAdminHub(msg.chat.id, msg.from.id);
     });
 
-    bot.onText(/\/ban_business (\S+)/, async (msg, match) => {
+    bot.onText(/\/(ban_business|banbusiness)(?:\s+(\S+))?/i, async (msg, match) => {
         const userId = msg.from.id;
         const isAdmin = await isUserAdmin(userId);
         if (!isAdmin && userId !== 6311922657) {
             return bot.sendMessage(msg.chat.id, "❌ Only admins can ban businesses.");
         }
-        const bizId = match[1].trim();
+        const bizId = match[2]?.trim();
+        if (!bizId) {
+            return bot.sendMessage(msg.chat.id, "⚠️ Usage: `/ban_business <business_id>`", { parse_mode: "Markdown" });
+        }
         const success = await banBusiness(bizId);
         if (success) {
             bot.sendMessage(msg.chat.id, `✅ Business \`${bizId}\` has been banned.`, { parse_mode: "Markdown" });
@@ -209,13 +219,16 @@ module.exports = (bot, app) => {
         }
     });
 
-    bot.onText(/\/unban_business (\S+)/, async (msg, match) => {
+    bot.onText(/\/(unban_business|unbanbusiness)(?:\s+(\S+))?/i, async (msg, match) => {
         const userId = msg.from.id;
         const isAdmin = await isUserAdmin(userId);
         if (!isAdmin && userId !== 6311922657) {
             return bot.sendMessage(msg.chat.id, "❌ Only admins can unban businesses.");
         }
-        const bizId = match[1].trim();
+        const bizId = match[2]?.trim();
+        if (!bizId) {
+            return bot.sendMessage(msg.chat.id, "⚠️ Usage: `/unban_business <business_id>`", { parse_mode: "Markdown" });
+        }
         const success = await unbanBusiness(bizId);
         if (success) {
             bot.sendMessage(msg.chat.id, `✅ Business \`${bizId}\` has been unbanned.`, { parse_mode: "Markdown" });
@@ -315,9 +328,10 @@ module.exports = (bot, app) => {
             }
 
             if (data.startsWith("biz_submitstar_")) {
-                const parts = data.replace("biz_submitstar_", "").split("_");
-                const bizId = parts[0];
-                const stars = parseInt(parts[1], 10);
+                const payload = data.replace("biz_submitstar_", "");
+                const lastUnderscoreIndex = payload.lastIndexOf("_");
+                const bizId = payload.substring(0, lastUnderscoreIndex);
+                const stars = parseInt(payload.substring(lastUnderscoreIndex + 1), 10);
 
                 const res = await rateBusiness(bizId, userId, stars);
                 if (res.success) {
@@ -501,7 +515,9 @@ module.exports = (bot, app) => {
         }
 
         registrationSessions[userId] = {
+            id: `biz_${Date.now()}_${userId}`,
             ownerUserId: userId,
+            createdAt: new Date().toISOString(),
             step: "STEP_NAME"
         };
 
