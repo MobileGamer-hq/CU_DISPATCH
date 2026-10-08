@@ -24,6 +24,12 @@ Here are all the commands available for students:
 • /timetable – View academic, semester, and exam timetables
 • /handbook – Download the official student handbook
 
+🏢 *Campus Business Directory*
+• /directory – Browse campus business catalog & top rated services
+• /register_business – Register your business in the directory
+• /my_business – View and manage your registered business
+• /search_business `<query>` – Search businesses by tag or keyword
+
 🔍 *Lost & Found*
 • /submit_lost_and_found – Report a lost or found item (photo & description)
 • /lost_and_found – View all posted lost and found items
@@ -41,6 +47,11 @@ You have access to admin management, broadcasting, and verification commands:
 • /users – View total user count & level statistics
 • /view_users – List all registered users with details
 • /find \`<matric>\` – Find a user by Matric number
+
+🏢 *Business Directory Admin*
+• /admin_businesses – View directory stats & total counts
+• /ban_business \`<id>\` – Ban a business listing by ID
+• /unban_business \`<id>\` – Unban a business listing by ID
 
 ⚙️ *User Verification & Management*
 • /add_admin \`<matric>\` – Make a user an admin by Matric number

@@ -1,5 +1,9 @@
 const userCommands = [
   { command: "start", description: "Register or initialize your session" },
+  { command: "directory", description: "Browse campus business catalog & directory" },
+  { command: "register_business", description: "Register your business in the directory" },
+  { command: "my_business", description: "View or manage your registered business" },
+  { command: "search_business", description: "Search businesses by tag or keyword" },
   { command: "help", description: "View available commands and features" },
   { command: "view_info", description: "Check your registered information" },
   { command: "update_info", description: "Update your profile information" },
@@ -21,6 +25,9 @@ const adminCommands = [
   { command: "users", description: "View total users & level analytics" },
   { command: "view_users", description: "View all registered users" },
   { command: "find", description: "Find user by Matric number" },
+  { command: "admin_businesses", description: "View business directory stats & manage listings" },
+  { command: "ban_business", description: "Ban a business listing by ID" },
+  { command: "unban_business", description: "Unban a business listing by ID" },
   { command: "add_admin", description: "Promote user to admin by Matric" },
   { command: "remove_user", description: "Remove user by Matric number" },
   { command: "verify_user", description: "Verify a user's matric & level" },
@@ -38,3 +45,4 @@ module.exports = {
   userCommands,
   adminCommands,
 };
+
