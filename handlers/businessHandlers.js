@@ -2,6 +2,7 @@ const {
     saveBusiness,
     getBusiness,
     getUserBusiness,
+    getUserBusinesses,
     getAllBusinesses,
     searchBusinesses,
     getBusinessesByCategory,
@@ -11,13 +12,15 @@ const {
     unbanBusiness,
     deleteBusiness,
     getBusinessStats,
+    updateBusinessFields,
     isUserAdmin,
     notifyAdmins
 } = require("../utilities/database");
 
-// Temporary session storage for conversational registration & search steps
+// Temporary session storage
 const registrationSessions = {};
 const searchSessions = {};
+const editSessions = {};
 
 // Categories list
 const CATEGORIES = [
@@ -40,7 +43,7 @@ module.exports = (bot, app) => {
         const buttons = [
             [{ text: "🏆 Top Rated Businesses", callback_data: "biz_menu_top" }, { text: "🔍 Browse Categories", callback_data: "biz_menu_categories" }],
             [{ text: "🆕 Recently Added", callback_data: "biz_menu_recent" }, { text: "🔎 Quick Search", callback_data: "biz_menu_search" }],
-            [{ text: "➕ Register My Business", callback_data: "biz_menu_register" }, { text: "💼 My Business", callback_data: "biz_menu_mine" }]
+            [{ text: "➕ Register Business", callback_data: "biz_menu_register" }, { text: "💼 My Businesses", callback_data: "biz_menu_mine" }]
         ];
 
         if (adminStatus || userId === 6311922657) {
@@ -51,7 +54,9 @@ module.exports = (bot, app) => {
     }
 
     // Format single business profile card
-    function formatBusinessCard(b) {
+    function formatBusinessCard(b, options = {}) {
+        const { isDraft = false, isAdmin = false, isOwner = false } = options;
+
         const hasRatings = b.totalRatings && b.totalRatings > 0;
         const ratingDisplay = hasRatings
             ? `${"⭐".repeat(Math.round(b.averageRating || 0))} ${b.averageRating} / 5.0 (${b.totalRatings} review${b.totalRatings > 1 ? 's' : ''})`
@@ -59,22 +64,29 @@ module.exports = (bot, app) => {
 
         const tagsFormatted = (b.tags || []).map(t => `#${t.replace(/\s+/g, '')}`).join(" ");
         const ownerDisplay = (b.showOwnerName && b.ownerName) ? `👤 *Owner:* ${b.ownerName}\n` : "";
-        const rawDate = b.createdAt ? new Date(b.createdAt) : new Date();
-        const regDate = isNaN(rawDate.getTime()) ? "New Listing" : rawDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-        const bizIdDisplay = b.id ? `\`${b.id}\`` : "(Draft)";
 
-        return `🏢 *${b.name || "Business"}*\n` +
+        let card = `🏢 *${b.name || "Business"}*\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `⭐ *Rating:* ${ratingDisplay}\n` +
             `📂 *Category:* ${b.category || "General"}\n` +
             `🏷️ *Tags:* ${tagsFormatted || "#campus"}\n` +
             `📝 *Description:* ${b.description || "No description provided."}\n` +
-            `${ownerDisplay}` +
-            `📅 *Registered:* ${regDate}\n` +
-            `🆔 *ID:* ${bizIdDisplay}`;
+            `${ownerDisplay}`;
+
+        if (!isDraft) {
+            const rawDate = b.createdAt ? new Date(b.createdAt) : new Date();
+            const regDate = isNaN(rawDate.getTime()) ? "New Listing" : rawDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+            card += `📅 *Registered:* ${regDate}\n`;
+        }
+
+        if ((isAdmin || isOwner) && !isDraft && b.id) {
+            card += `🆔 *ID:* \`${b.id}\`\n`;
+        }
+
+        return card.trim();
     }
 
-    // Format business card inline actions (Link, Rate)
+    // Format business card inline actions (Link, Rate, Edit, Delete)
     function getBusinessActionButtons(b, isOwner = false) {
         const rows = [];
         const actionRow = [];
@@ -86,14 +98,17 @@ module.exports = (bot, app) => {
         rows.push(actionRow);
 
         if (isOwner) {
-            rows.push([{ text: "✏️ Edit Business", callback_data: "biz_menu_register" }, { text: "🗑️ Delete Business", callback_data: `biz_delete_${b.id}` }]);
+            rows.push([
+                { text: "✏️ Edit Business", callback_data: `biz_edit_menu_${b.id}` },
+                { text: "🗑️ Delete Listing", callback_data: `biz_delete_${b.id}` }
+            ]);
         }
 
         return { inline_keyboard: rows };
     }
 
     // Paginated list viewer helper
-    async function sendBusinessList(chatId, messageId, title, businesses, page = 0, backCallback = "biz_menu_main") {
+    async function sendBusinessList(chatId, messageId, title, businesses, page = 0, backCallback = "biz_menu_main", cardOptions = {}) {
         if (!businesses || businesses.length === 0) {
             const text = `${title}\n\n⚠️ No businesses found in this section yet.`;
             const keyboard = { inline_keyboard: [[{ text: "⬅️ Back to Directory", callback_data: backCallback }]] };
@@ -108,7 +123,7 @@ module.exports = (bot, app) => {
         const currentPage = Math.max(0, Math.min(page, totalPages - 1));
         const biz = businesses[currentPage];
 
-        const cardText = `${title} (Listing ${currentPage + 1} of ${businesses.length})\n\n${formatBusinessCard(biz)}`;
+        const cardText = `${title} (Listing ${currentPage + 1} of ${businesses.length})\n\n${formatBusinessCard(biz, cardOptions)}`;
 
         const navRow = [];
         if (currentPage > 0) {
@@ -118,7 +133,7 @@ module.exports = (bot, app) => {
             navRow.push({ text: "Next ➡️", callback_data: `biz_page_${currentPage + 1}` });
         }
 
-        const actionKeyboard = getBusinessActionButtons(biz);
+        const actionKeyboard = getBusinessActionButtons(biz, cardOptions.isOwner);
         const inlineRows = [...actionKeyboard.inline_keyboard];
 
         if (navRow.length > 0) {
@@ -156,8 +171,6 @@ module.exports = (bot, app) => {
         }
         return bot.sendMessage(chatId, text, { parse_mode: "Markdown", reply_markup: keyboard });
     }
-
-    // ========== BOT COMMAND LISTENERS ==========
 
     // ========== BOT COMMAND LISTENERS ==========
 
@@ -342,6 +355,94 @@ module.exports = (bot, app) => {
                 return;
             }
 
+            // ========== EDITING BUSINESS CALLBACKS ==========
+
+            if (data.startsWith("biz_edit_menu_")) {
+                const bizId = data.replace("biz_edit_menu_", "");
+                const biz = await getBusiness(bizId);
+                if (!biz) return bot.sendMessage(chatId, "⚠️ Business not found.");
+                if (biz.ownerUserId !== String(userId)) {
+                    return bot.sendMessage(chatId, "❌ You can only edit your own business.");
+                }
+
+                const keyboard = {
+                    inline_keyboard: [
+                        [{ text: "🏢 Business Name", callback_data: `biz_edit_field_name_${bizId}` }, { text: "🔗 Link / Handle", callback_data: `biz_edit_field_link_${bizId}` }],
+                        [{ text: "📂 Category", callback_data: `biz_edit_field_cat_${bizId}` }, { text: "🏷️ Search Tags", callback_data: `biz_edit_field_tags_${bizId}` }],
+                        [{ text: "📝 Description", callback_data: `biz_edit_field_desc_${bizId}` }, { text: "👤 Owner Name", callback_data: `biz_edit_field_owner_${bizId}` }],
+                        [{ text: "🔙 Back to My Businesses", callback_data: "biz_menu_mine" }]
+                    ]
+                };
+
+                const text = `✏️ *Edit Business Listing ("${biz.name}")*\n━━━━━━━━━━━━━━━━━━━━\nSelect which field you would like to edit:`;
+                if (messageId) {
+                    try { return await bot.editMessageText(text, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: keyboard }); } catch (e) {}
+                }
+                return bot.sendMessage(chatId, text, { parse_mode: "Markdown", reply_markup: keyboard });
+            }
+
+            if (data.startsWith("biz_edit_field_name_")) {
+                const bizId = data.replace("biz_edit_field_name_", "");
+                editSessions[userId] = { businessId: bizId, field: "name" };
+                return bot.sendMessage(chatId, "✍️ Send your new **Business Name** (2 - 60 chars):", { parse_mode: "Markdown" });
+            }
+
+            if (data.startsWith("biz_edit_field_link_")) {
+                const bizId = data.replace("biz_edit_field_link_", "");
+                editSessions[userId] = { businessId: bizId, field: "link" };
+                return bot.sendMessage(chatId, "✍️ Send your new **Link or Handle** (e.g., https://t.me/yourchannel, website, or username):", { parse_mode: "Markdown" });
+            }
+
+            if (data.startsWith("biz_edit_field_desc_")) {
+                const bizId = data.replace("biz_edit_field_desc_", "");
+                editSessions[userId] = { businessId: bizId, field: "description" };
+                return bot.sendMessage(chatId, "✍️ Send your new **Business Description** (max 400 chars):", { parse_mode: "Markdown" });
+            }
+
+            if (data.startsWith("biz_edit_field_tags_")) {
+                const bizId = data.replace("biz_edit_field_tags_", "");
+                editSessions[userId] = { businessId: bizId, field: "tags" };
+                return bot.sendMessage(chatId, "✍️ Send your new **Search Tags** separated by commas (e.g. `food, snacks, delivery`):", { parse_mode: "Markdown" });
+            }
+
+            if (data.startsWith("biz_edit_field_cat_")) {
+                const bizId = data.replace("biz_edit_field_cat_", "");
+                const catButtons = CATEGORIES.map(c => [{ text: c.label, callback_data: `biz_edit_setcat_${bizId}_${c.id}` }]);
+                catButtons.push([{ text: "🔙 Back to Edit Menu", callback_data: `biz_edit_menu_${bizId}` }]);
+                return bot.sendMessage(chatId, "📂 Select a new **Category** for your business:", {
+                    reply_markup: { inline_keyboard: catButtons }
+                });
+            }
+
+            if (data.startsWith("biz_edit_setcat_")) {
+                const payload = data.replace("biz_edit_setcat_", "");
+                const lastUnderscoreIndex = payload.lastIndexOf("_");
+                const bizId = payload.substring(0, lastUnderscoreIndex);
+                const catId = payload.substring(lastUnderscoreIndex + 1);
+
+                await updateBusinessFields(bizId, { category: catId });
+                bot.sendMessage(chatId, `✅ Business category updated to *${catId}*!`, { parse_mode: "Markdown" });
+                return showMyBusiness(chatId, userId);
+            }
+
+            if (data.startsWith("biz_edit_field_owner_")) {
+                const bizId = data.replace("biz_edit_field_owner_", "");
+                editSessions[userId] = { businessId: bizId, field: "ownerName" };
+                return bot.sendMessage(chatId, "✍️ Send your new **Owner Name**, or tap **[ 🚫 Hide Owner Name ]** below:", {
+                    reply_markup: {
+                        inline_keyboard: [[{ text: "🚫 Hide Owner Name", callback_data: `biz_edit_hideowner_${bizId}` }]]
+                    }
+                });
+            }
+
+            if (data.startsWith("biz_edit_hideowner_")) {
+                const bizId = data.replace("biz_edit_hideowner_", "");
+                await updateBusinessFields(bizId, { ownerName: null, showOwnerName: false });
+                delete editSessions[userId];
+                bot.sendMessage(chatId, "✅ Owner name hidden from business card!");
+                return showMyBusiness(chatId, userId);
+            }
+
             // Registration step callbacks
             if (data.startsWith("biz_reg_cat_")) {
                 const catId = data.replace("biz_reg_cat_", "");
@@ -408,8 +509,15 @@ module.exports = (bot, app) => {
             // Deletion
             if (data.startsWith("biz_delete_")) {
                 const bizId = data.replace("biz_delete_", "");
-                await deleteBusiness(bizId);
-                return bot.sendMessage(chatId, "🗑️ Business listing has been deleted.");
+                const biz = await getBusiness(bizId);
+                const isAdmin = await isUserAdmin(userId);
+                if (biz && (biz.ownerUserId === String(userId) || isAdmin || userId === 6311922657)) {
+                    await deleteBusiness(bizId);
+                    bot.sendMessage(chatId, "🗑️ Business listing has been deleted.");
+                    return showMyBusiness(chatId, userId);
+                } else {
+                    bot.sendMessage(chatId, "❌ Unauthorized to delete this business.");
+                }
             }
 
             // Admin callbacks
@@ -419,13 +527,13 @@ module.exports = (bot, app) => {
 
             if (data === "biz_admin_view_active") {
                 const all = await getAllBusinesses(false);
-                return sendBusinessList(chatId, messageId, "⚙️ *Admin: Active Businesses*", all, 0, "biz_admin_hub");
+                return sendBusinessList(chatId, messageId, "⚙️ *Admin: Active Businesses*", all, 0, "biz_admin_hub", { isAdmin: true });
             }
 
             if (data === "biz_admin_view_banned") {
                 const snapshot = await getAllBusinesses(true);
                 const bannedList = snapshot.filter(b => b.status === "banned");
-                return sendBusinessList(chatId, messageId, "⚙️ *Admin: Banned Businesses*", bannedList, 0, "biz_admin_hub");
+                return sendBusinessList(chatId, messageId, "⚙️ *Admin: Banned Businesses*", bannedList, 0, "biz_admin_hub", { isAdmin: true });
             }
 
         } catch (error) {
@@ -440,6 +548,56 @@ module.exports = (bot, app) => {
 
         const userId = msg.from.id;
         const chatId = msg.chat.id;
+
+        // Edit session handling
+        if (editSessions[userId]) {
+            const editSession = editSessions[userId];
+            const bizId = editSession.businessId;
+            const field = editSession.field;
+            delete editSessions[userId];
+
+            const text = msg.text.trim();
+
+            if (field === "name") {
+                if (text.length < 2 || text.length > 60) {
+                    return bot.sendMessage(chatId, "⚠️ Business name must be between 2 and 60 characters. Edit cancelled.");
+                }
+                await updateBusinessFields(bizId, { name: text });
+                bot.sendMessage(chatId, `✅ Business name updated to *${text}*!`, { parse_mode: "Markdown" });
+                return showMyBusiness(chatId, userId);
+            }
+
+            if (field === "link") {
+                await updateBusinessFields(bizId, { link: text });
+                bot.sendMessage(chatId, `✅ Link updated to *${text}*!`, { parse_mode: "Markdown" });
+                return showMyBusiness(chatId, userId);
+            }
+
+            if (field === "description") {
+                if (text.length > 400) {
+                    return bot.sendMessage(chatId, "⚠️ Description is too long (max 400 chars). Edit cancelled.");
+                }
+                await updateBusinessFields(bizId, { description: text });
+                bot.sendMessage(chatId, "✅ Description updated successfully!");
+                return showMyBusiness(chatId, userId);
+            }
+
+            if (field === "tags") {
+                const tags = text.split(",").map(t => t.trim()).filter(Boolean);
+                if (tags.length === 0) {
+                    return bot.sendMessage(chatId, "⚠️ Invalid tags provided. Edit cancelled.");
+                }
+                await updateBusinessFields(bizId, { tags });
+                bot.sendMessage(chatId, `✅ Search tags updated to: *${tags.join(", ")}*`, { parse_mode: "Markdown" });
+                return showMyBusiness(chatId, userId);
+            }
+
+            if (field === "ownerName") {
+                await updateBusinessFields(bizId, { ownerName: text, showOwnerName: true });
+                bot.sendMessage(chatId, `✅ Owner name updated to *${text}*!`, { parse_mode: "Markdown" });
+                return showMyBusiness(chatId, userId);
+            }
+        }
 
         // Quick search session handling
         if (searchSessions[userId]) {
@@ -509,11 +667,6 @@ module.exports = (bot, app) => {
     // ========== REGISTRATION FLOW HELPERS ==========
 
     async function startRegistration(chatId, userId) {
-        const existing = await getUserBusiness(userId);
-        if (existing) {
-            return bot.sendMessage(chatId, `⚠️ You already have a registered business: *${existing.name}*.\nUse \`/my_business\` to view or manage it.`, { parse_mode: "Markdown" });
-        }
-
         registrationSessions[userId] = {
             id: `biz_${Date.now()}_${userId}`,
             ownerUserId: userId,
@@ -526,7 +679,7 @@ module.exports = (bot, app) => {
 
     function showRegistrationPreview(chatId, session) {
         const previewText = `📋 *PREVIEW YOUR BUSINESS LISTING*\n━━━━━━━━━━━━━━━━━━━━\n` +
-            formatBusinessCard(session) +
+            formatBusinessCard(session, { isDraft: true }) +
             `\n\nIs everything correct? Tap **[ ✅ Confirm & Publish ]** to list your business!`;
 
         const keyboard = {
@@ -540,20 +693,15 @@ module.exports = (bot, app) => {
     }
 
     async function showMyBusiness(chatId, userId, messageId = null) {
-        const biz = await getUserBusiness(userId);
-        if (!biz) {
+        const userBusinesses = await getUserBusinesses(userId);
+        if (!userBusinesses || userBusinesses.length === 0) {
             const text = "💼 You have not registered any business yet.\nTap below to register!";
             const keyboard = { inline_keyboard: [[{ text: "➕ Register Business Now", callback_data: "biz_menu_register" }]] };
             if (messageId) return bot.editMessageText(text, { chat_id: chatId, message_id: messageId, reply_markup: keyboard });
             return bot.sendMessage(chatId, text, { reply_markup: keyboard });
         }
 
-        const text = `💼 *YOUR REGISTERED BUSINESS*\n━━━━━━━━━━━━━━━━━━━━\n` + formatBusinessCard(biz);
-        const actionKeyboard = getBusinessActionButtons(biz, true);
-        actionKeyboard.inline_keyboard.push([{ text: "🔙 Back to Directory", callback_data: "biz_menu_main" }]);
-
-        if (messageId) return bot.editMessageText(text, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: actionKeyboard });
-        return bot.sendMessage(chatId, text, { parse_mode: "Markdown", reply_markup: actionKeyboard });
+        return sendBusinessList(chatId, messageId, "💼 *YOUR REGISTERED BUSINESSES*", userBusinesses, 0, "biz_menu_main", { isOwner: true });
     }
 
     async function showAdminHub(chatId, userId, messageId = null) {

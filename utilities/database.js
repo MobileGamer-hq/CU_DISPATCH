@@ -290,7 +290,7 @@ async function getBusiness(businessId) {
     }
 }
 
-// Get user's active registered business
+// Get user's active registered business (first one)
 async function getUserBusiness(userId) {
     try {
         const db = admin.database();
@@ -314,6 +314,26 @@ async function getUserBusiness(userId) {
     } catch (error) {
         console.error("❌ Error fetching user business:", error);
         return null;
+    }
+}
+
+// Get all non-deleted businesses owned by a user
+async function getUserBusinesses(userId) {
+    try {
+        const db = admin.database();
+        const snapshot = await db
+            .ref("businesses")
+            .orderByChild("ownerUserId")
+            .equalTo(String(userId))
+            .once("value");
+
+        if (!snapshot.exists()) return [];
+
+        const val = snapshot.val();
+        return Object.values(val).filter(b => b.status !== "deleted");
+    } catch (error) {
+        console.error("❌ Error fetching user businesses:", error);
+        return [];
     }
 }
 
@@ -508,6 +528,28 @@ async function getBusinessStats() {
     }
 }
 
+// Update specific fields of a business
+async function updateBusinessFields(businessId, updates) {
+    try {
+        const db = admin.database();
+        const biz = await getBusiness(businessId);
+        if (!biz) return null;
+
+        const merged = { ...biz, ...updates, updatedAt: new Date().toISOString() };
+        if (updates.tags || updates.name) {
+            const normalizedTags = (merged.tags || []).map(t => t.trim().toLowerCase());
+            if (merged.name) normalizedTags.push(merged.name.trim().toLowerCase());
+            merged.normalizedTags = normalizedTags;
+        }
+
+        await db.ref(`businesses/${businessId}`).update(merged);
+        return merged;
+    } catch (error) {
+        console.error("❌ Error updating business fields:", error);
+        return null;
+    }
+}
+
 // ========== EXPORTS ==========
 module.exports = {
     getUserIds,
@@ -531,6 +573,7 @@ module.exports = {
     saveBusiness,
     getBusiness,
     getUserBusiness,
+    getUserBusinesses,
     getAllBusinesses,
     searchBusinesses,
     getBusinessesByCategory,
@@ -539,6 +582,7 @@ module.exports = {
     banBusiness,
     unbanBusiness,
     deleteBusiness,
-    getBusinessStats
+    getBusinessStats,
+    updateBusinessFields
 };
 
