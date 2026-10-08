@@ -28,7 +28,7 @@ Here are all the commands available for students:
 • /directory – Browse campus business catalog & top rated services
 • /register_business – Register your business in the directory
 • /my_business – View and manage your registered business
-• /search_business `<query>` – Search businesses by tag or keyword
+• /search_business \`<query>\` – Search businesses by tag or keyword
 
 🔍 *Lost & Found*
 • /submit_lost_and_found – Report a lost or found item (photo & description)
